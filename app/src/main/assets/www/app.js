@@ -2271,22 +2271,21 @@ function _onWindowStateChange(isMaximized) {
 /*  op: opacity   bl: blur(px)   sy: scaleY   sc: scaleX
     dy: translateY 오프셋(px, slot 기준선에서의 추가 이동)
     각 속성은 GPU compositor 전용(transform/opacity/filter)만 사용 */
+// 변경 후
 const FS_SLOTS = [
     /* d    op     bl    sy     sc    dy  */
-    { d: -3, op: 0.18, bl: 4.0, sy: 0.82, sc: 0.90, dy: 0 },
-    { d: -2, op: 0.38, bl: 2.0, sy: 0.88, sc: 0.94, dy: 0 },
-    { d: -1, op: 0.62, bl: 0.6, sy: 0.95, sc: 0.98, dy: 0 },
+    { d: -2, op: 0.30, bl: 3.0, sy: 0.85, sc: 0.91, dy: 0 },
+    { d: -1, op: 0.60, bl: 0.8, sy: 0.94, sc: 0.97, dy: 0 },
     { d: 0, op: 1.00, bl: 0.0, sy: 1.00, sc: 1.00, dy: 0 },
-    { d: 1, op: 0.58, bl: 0.6, sy: 0.95, sc: 0.98, dy: 0 },
-    { d: 2, op: 0.34, bl: 2.0, sy: 0.88, sc: 0.94, dy: 0 },
-    { d: 3, op: 0.15, bl: 4.0, sy: 0.82, sc: 0.90, dy: 0 },
+    { d: 1, op: 0.56, bl: 0.8, sy: 0.94, sc: 0.97, dy: 0 },
+    { d: 2, op: 0.26, bl: 3.0, sy: 0.85, sc: 0.91, dy: 0 },
 ];
 
 /* 각 줄에 사전 할당하는 고정 행 높이(px) — CSS와 반드시 일치 */
 const FS_ROW_H = 56;   /* CSS: .np-fs-lyric-line { height: FS_ROW_H px } */
 /* active 줄 기준 앞/뒤 표시 범위 */
-const FS_BEFORE = 3;
-const FS_AFTER = 3;
+const FS_BEFORE = 2;
+const FS_AFTER = 2;
 /* 범위 밖 줄이 사라지는/나타나는 translateY 거리 */
 const FS_SLIDE = 22;   /* px */
 
@@ -2737,6 +2736,7 @@ window.__onAndroidBack = function() {
     }
 };
 
+// 변경 후
 // Landscape = fullscreen NP (if NP is open)
 let _lastOrientation = screen.orientation?.type || '';
 function _onOrientationChange() {
@@ -2745,17 +2745,42 @@ function _onOrientationChange() {
     if (!np) return;
     if (isLandscape && np.classList.contains('on')) {
         np.classList.add('fullscreen');
-        if (LY.lines.length > 0) _buildFsLyrics();
-        // Notify Android to go fullscreen
+        document.body.classList.add('maximized');
+        _attachFsResizeObserver();
+        document.querySelectorAll('.np-lyric-line')
+            .forEach(el => el.classList.remove('active', 'prev', 'near'));
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    _positionFsPanel();
+                    if (LY.lines.length > 0) {
+                        _buildFsLyricsDOM();
+                        requestAnimationFrame(() => {
+                            _highlightFsLine(LY.curIdx);
+                        });
+                    }
+                });
+            });
+        });
         try { window.AndroidBridge.postMessage(JSON.stringify({ type: 'orientation', value: 'landscape' })); } catch {}
     } else {
         np.classList.remove('fullscreen');
-        _destroyFsLyrics();
+        document.body.classList.remove('maximized');
+        _detachFsResizeObserver();
+        _restoreNormalMode();
+        document.getElementById('np-fs-lyrics')?.remove();
+        document.getElementById('np-fs-artist')?.remove();
+        if (LY.lines.length > 0) {
+            _renderLyrics();
+            requestAnimationFrame(() => {
+                _highlightLine(LY.curIdx, true);
+            });
+        }
         try { window.AndroidBridge.postMessage(JSON.stringify({ type: 'orientation', value: 'portrait' })); } catch {}
     }
 }
 window.addEventListener('resize', _onOrientationChange);
-window.addEventListener('orientationchange', () => setTimeout(_onOrientationChange, 150));
+window.addEventListener('orientationchange', () => setTimeout(_onOrientationChange, 200));
 
 // Touch on mini bar: seek via NP
 const _barEl = document.getElementById('bar');
