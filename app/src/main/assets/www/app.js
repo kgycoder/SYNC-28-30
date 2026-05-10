@@ -1391,13 +1391,21 @@ function stopTick() { clearInterval(S.ticker); }
 /* ════════════════════════════════════════════
    NOW PLAYING
 ════════════════════════════════════════════ */
+// 변경
 function openNP() {
     document.getElementById('np').classList.add('on');
     if (LY.lines.length > 0) _startLyricsTick();
+    if (window.innerWidth > window.innerHeight) setTimeout(_onOrientationChange, 100);
 }
 function closeNP() {
-    document.getElementById('np').classList.remove('on');
+    const np = document.getElementById('np');
+    np.classList.remove('on');
     _stopLyricsTick();
+    if (document.body.classList.contains('fs-landscape')) {
+        np.classList.remove('fullscreen');
+        document.body.classList.remove('fs-landscape');
+        _restoreNormalMode();
+    }
 }
 
 /* ════════════════════════════════════════════
@@ -2317,7 +2325,9 @@ let _fsPanelRaf = null;
 
 /* ── np-panel 위치: 아트쉘 바로 아래 픽셀 고정 ── */
 let _posFsPanelRetry = null;
+// 변경
 function _positionFsPanel() {
+    if (document.body.classList.contains('fs-landscape')) return;
     const shell = document.querySelector('#np.fullscreen .np-art-shell');
     const panel = document.querySelector('#np.fullscreen .np-panel');
     if (!shell || !panel) return;
@@ -2736,51 +2746,45 @@ window.__onAndroidBack = function() {
     }
 };
 
-// 변경 후
+// 변경
 // Landscape = fullscreen NP (if NP is open)
-let _lastOrientation = screen.orientation?.type || '';
 function _onOrientationChange() {
     const isLandscape = window.innerWidth > window.innerHeight;
     const np = document.getElementById('np');
     if (!np) return;
+
     if (isLandscape && np.classList.contains('on')) {
         np.classList.add('fullscreen');
-        document.body.classList.add('maximized');
-        _attachFsResizeObserver();
-        document.querySelectorAll('.np-lyric-line')
-            .forEach(el => el.classList.remove('active', 'prev', 'near'));
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    _positionFsPanel();
-                    if (LY.lines.length > 0) {
-                        _buildFsLyricsDOM();
-                        requestAnimationFrame(() => {
-                            _highlightFsLine(LY.curIdx);
-                        });
-                    }
-                });
-            });
-        });
+        document.body.classList.add('fs-landscape');
+        LY._dotElFs = null; _fsLastIdx = -1; _fsVisible = new Set();
+        _stopLyricsTick();
+        requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(() => {
+            if (LY.lines.length > 0) {
+                _buildFsLyricsDOM();
+                requestAnimationFrame(() => _highlightFsLine(LY.curIdx));
+            } else {
+                _startLyricsTick();
+            }
+        })));
         try { window.AndroidBridge.postMessage(JSON.stringify({ type: 'orientation', value: 'landscape' })); } catch {}
-    } else {
+    } else if (!isLandscape) {
         np.classList.remove('fullscreen');
-        document.body.classList.remove('maximized');
-        _detachFsResizeObserver();
+        document.body.classList.remove('fs-landscape');
         _restoreNormalMode();
-        document.getElementById('np-fs-lyrics')?.remove();
-        document.getElementById('np-fs-artist')?.remove();
+        const fsInner = document.getElementById('np-fs-lyrics-inner');
+        if (fsInner) fsInner.innerHTML = '';
+        LY.lines.forEach(l => { delete l.el_fs; });
+        LY._dotElFs = null; _fsLastIdx = -1; _fsVisible = new Set();
+        _stopLyricsTick();
         if (LY.lines.length > 0) {
             _renderLyrics();
-            requestAnimationFrame(() => {
-                _highlightLine(LY.curIdx, true);
-            });
+            requestAnimationFrame(() => _highlightLine(LY.curIdx, true));
         }
         try { window.AndroidBridge.postMessage(JSON.stringify({ type: 'orientation', value: 'portrait' })); } catch {}
     }
 }
-window.addEventListener('resize', _onOrientationChange);
-window.addEventListener('orientationchange', () => setTimeout(_onOrientationChange, 200));
+window.addEventListener('resize', () => setTimeout(_onOrientationChange, 250));
+window.addEventListener('orientationchange', () => setTimeout(_onOrientationChange, 300));
 
 // Touch on mini bar: seek via NP
 const _barEl = document.getElementById('bar');
