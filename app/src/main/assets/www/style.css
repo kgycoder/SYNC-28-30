@@ -3530,30 +3530,35 @@ body.maximized {
 }
 
 /* 변경 후 */
+/* 변경 */
+/* ── Landscape NP (fullscreen mode) ── */
 @media (orientation: landscape) {
     #mob-nav { display: none !important; }
-    #bar { bottom: 0; }
+    #bar { bottom: 8px !important; left: 8px !important; right: 8px !important; }
 
-    /* ── 전체화면 NP: 가로 모드 레이아웃 ── */
+    .np-x { top: 10px !important; left: 14px !important; }
 
-    /* 왼쪽 46%: 앨범카드 영역 */
-    #np.fullscreen .np-art-area {
+    /* 왼쪽 44%: 앨범카드 영역 */
+    #np.fullscreen .np-art-area,
+    #np.fullscreen .np-art-area.has-lyrics {
         position: absolute !important;
         left: 0 !important;
         top: 0 !important;
-        width: 46% !important;
-        height: 100% !important;
+        width: 44% !important;
+        height: calc(100% - 120px) !important;
         flex-direction: column !important;
         align-items: center !important;
         justify-content: center !important;
-        /* 하단에 패널(곡명+재생바) 공간 확보 */
-        padding: 24px 20px 130px 28px !important;
+        padding: 16px !important;
         gap: 0 !important;
+        min-height: unset !important;
     }
 
-    /* 앨범카드: 크게 */
-    #np.fullscreen .np-art-shell {
-        width: min(320px, 36vw, 58vh) !important;
+    /* 앨범 아트: 크게 */
+    #np.fullscreen .np-art-shell,
+    #np.fullscreen .np-art-area.has-lyrics .np-art-shell {
+        width: min(260px, 34vw, 60vh) !important;
+        margin: 0 !important;
     }
 
     /* 일반 가사 패널 숨김 */
@@ -3561,42 +3566,71 @@ body.maximized {
         display: none !important;
     }
 
-    /* 곡명 + 재생바 패널: JS가 top/left/width를 동적 지정 */
+    /* 곡 이름 + 재생바 패널: 왼쪽 하단 고정 (CSS 전담, JS _positionFsPanel 비활성) */
     #np.fullscreen .np-panel {
         position: absolute !important;
-        /* left/top/width: _positionFsPanel()이 동적 설정 */
-        padding: 10px 20px 14px !important;
-        background: none !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        top: auto !important;
+        width: 44% !important;
+        height: 120px !important;
+        padding: 8px 20px 18px !important;
+        background: linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.28) 80%, transparent 100%) !important;
         box-shadow: none !important;
+        gap: 5px !important;
         display: flex !important;
         flex-direction: column !important;
-        gap: 6px !important;
-        z-index: 15;
+        justify-content: flex-end !important;
+        z-index: 15 !important;
     }
 
-    /* 컨트롤 버튼(셔플·이전·재생·다음·반복) 숨김 */
-    #np.fullscreen .np-ctrl {
-        display: none !important;
-    }
+    /* 재생 버튼 / 셔플 / 볼륨 등 숨김 */
+    #np.fullscreen .np-ctrl     { display: none !important; }
+    #np.fullscreen .np-bottom-row { display: none !important; }
+    #np.fullscreen .np-act      { display: none !important; }
 
-    /* 볼륨·에코 숨김 */
-    #np.fullscreen .np-bottom-row {
-        display: none !important;
-    }
-
-    /* 즐겨찾기 버튼 숨김 */
-    #np.fullscreen .np-act {
-        display: none !important;
-    }
-
-    /* 곡 이름 크기 */
+    /* 곡 이름 / 아티스트 */
     #np.fullscreen .np-title {
-        font-size: clamp(13px, 1.8vw, 18px) !important;
+        font-size: clamp(12px, 2.2vw, 19px) !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
+        margin-bottom: 1px !important;
+    }
+    #np.fullscreen .np-ch {
+        font-size: clamp(10px, 1.3vw, 13px) !important;
     }
 
+    /* 재생바 */
+    #np.fullscreen .np-prog-wrap { width: 100% !important; }
+
+    /* 오른쪽 56%: 가사 패널 */
+    #np.fullscreen #np-fs-lyrics {
+        position: absolute !important;
+        left: 44% !important;
+        right: 0 !important;
+        top: 0 !important;
+        width: 56% !important;
+        height: 100% !important;
+        display: block !important;
+        overflow: hidden !important;
+        -webkit-mask-image: linear-gradient(
+            to bottom, transparent 0%, black 14%, black 86%, transparent 100%
+        ) !important;
+        mask-image: linear-gradient(
+            to bottom, transparent 0%, black 14%, black 86%, transparent 100%
+        ) !important;
+        padding: 0 28px 0 20px !important;
+        z-index: 10 !important;
+        pointer-events: none !important;
+    }
+
+    /* 가사 줄 크기 */
+    #np.fullscreen .np-fs-lyric-line {
+        font-size: clamp(18px, 2.8vw, 34px) !important;
+        height: 56px !important;
+    }
+}
     #np.fullscreen .np-ch {
         font-size: clamp(11px, 1.2vw, 14px) !important;
     }
